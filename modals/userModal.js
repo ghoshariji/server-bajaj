@@ -18,7 +18,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please add a password"],
     },
-    profilePicture: { type: Buffer },
+    profilePicture: {
+        data: {
+          type: Buffer,
+          default: "", // Set default image
+        },
+        contentType: {
+          type: String,
+          default: "image/png", // Default content type
+        },
+      },
   },
   { timestamps: true }
 );

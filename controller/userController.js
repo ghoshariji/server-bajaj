@@ -69,58 +69,71 @@ const getProfile = async (req, res) => {
         _id: user.id,
         email: user.email,
         name: user.name,
-        profilePicture: user.profilePicture
-          ? `data:image/png;base64,${user.profilePicture.toString('base64')}`
-          : null,
+        profilePicture: user.profilePicture,
       });
     } catch (error) {
       res.status(500).json({ message: 'Failed to retrieve profile' });
       console.error(error);
     }
   };
+  const updateProfile = async (req, res) => {
+    const { name, password } = req.body;
+    const userId = req.user.id;
+
+    console.log(req.file);
+    console.log(req.body);
+    console.log(userId);
+    try {
+      // Find user by user ID
+      const user = await User.findById(userId);
+  
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      // Update user fields if provided
+      if (name) {
+        user.name = name;
+      }
+  
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+      }
+  
+      // Handle profile picture if provided
+      if (req.file) {
+        user.profilePicture = {
+          data: req.file.buffer, // Store the image as a Buffer
+          contentType: req.file.mimetype, // Store the MIME type of the image
+        };
+      }
+  
+      // Save the updated user
+      await user.save();
+  
+      // Prepare profile picture as base64-encoded string if exists
+      const profilePictureBase64 = user.profilePicture?.data
+        ? `data:${user.profilePicture.contentType};base64,${user.profilePicture.data.toString("base64")}`
+        : null;
+  
+
+        console.log(user);
+      // Respond with the updated user information
+      res.status(200).json({
+        _id: user.id,
+        email: user.email,
+        name: user.name,
+        profilePicture: profilePictureBase64, // Send the base64 profile picture
+      });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ message: "Profile update failed" });
+    }
+  };
   
   
 
 
-
-// Update User Profile (Name, Password, Profile Picture)
-const updateProfile = async (req, res) => {
-  const { name, password } = req.body;
-  const userId = req.user.id; 
-
-  try {
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Update user fields
-    if (name) {
-      user.name = name;
-    }
-
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
-    }
-
-    // Handle profile picture (stored as Buffer in MongoDB)
-    if (req.file) {
-      user.profilePicture = req.file.buffer; // Store image as Buffer
-    }
-
-    await user.save(); // Save updated user to DB
-
-    res.status(200).json({
-      _id: user.id,
-      email: user.email,
-      name: user.name,
-      profilePicture: user.profilePicture ? true : false, // Send back a flag to indicate profile picture exists
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Profile update failed' });
-  }
-};
 
 module.exports = { registerUser, loginUser, getProfile, updateProfile };
