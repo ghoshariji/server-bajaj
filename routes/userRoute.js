@@ -4,8 +4,9 @@ const {registerUser,loginUser,getProfile,updateProfile} =require ("../controller
 const multer = require('multer');
 const protect = require ("../middleware/authMiddleware");
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const storage = multer.memoryStorage(); 
+const upload = multer({ storage });
+
 
 
 const router = express.Router();
@@ -15,7 +16,7 @@ router.post('/login', loginUser);
 
 
 // Protected Route for Profile Get and Update (using 'protect' middleware)
-router.get('/profile', getProfile);
-router.put('/profile', upload.single('profilePicture'), updateProfile);
+router.get('/profile',protect, getProfile);
+router.put('/profile',protect, upload.single('profilePicture'), updateProfile);
 
 module.exports = router;

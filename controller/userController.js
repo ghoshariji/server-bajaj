@@ -56,11 +56,10 @@ const loginUser = async (req, res) => {
 
 // Get User Profile
 const getProfile = async (req, res) => {
-    const userId = req.user.id; 
+    const userId = req.user.id;
   
     try {
-      const user = await User.findById(userId).select('-password'); // Excluding password
-  
+      const user = await User.findById(userId).select('-password'); // Exclude password
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -69,13 +68,16 @@ const getProfile = async (req, res) => {
         _id: user.id,
         email: user.email,
         name: user.name,
-        profilePicture: user.profilePicture ? true : false, // Indicate if a profile picture exists
+        profilePicture: user.profilePicture
+          ? `data:image/png;base64,${user.profilePicture.toString('base64')}`
+          : null,
       });
     } catch (error) {
       res.status(500).json({ message: 'Failed to retrieve profile' });
       console.error(error);
     }
   };
+  
   
 
 
