@@ -1,7 +1,6 @@
-// backend/controllers/userController.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User= require("../modals/userModal");
+const User = require('../modals/userModal');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -11,11 +10,8 @@ const generateToken = (id) => {
 };
 
 // Register User
-const   registerUser = async (req, res) => {
-
-    console.log(req.body);
+const registerUser = async (req, res) => {
   const { email, password } = req.body;
-
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -58,4 +54,70 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+// Get User Profile
+const getProfile = async (req, res) => {
+    const userId = req.user.id; 
+  
+    try {
+      const user = await User.findById(userId).select('-password'); // Excluding password
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      res.status(200).json({
+        _id: user.id,
+        email: user.email,
+        name: user.name,
+        profilePicture: user.profilePicture ? true : false, // Indicate if a profile picture exists
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to retrieve profile' });
+      console.error(error);
+    }
+  };
+  
+
+
+
+// Update User Profile (Name, Password, Profile Picture)
+const updateProfile = async (req, res) => {
+  const { name, password } = req.body;
+  const userId = req.user.id; 
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user fields
+    if (name) {
+      user.name = name;
+    }
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    // Handle profile picture (stored as Buffer in MongoDB)
+    if (req.file) {
+      user.profilePicture = req.file.buffer; // Store image as Buffer
+    }
+
+    await user.save(); // Save updated user to DB
+
+    res.status(200).json({
+      _id: user.id,
+      email: user.email,
+      name: user.name,
+      profilePicture: user.profilePicture ? true : false, // Send back a flag to indicate profile picture exists
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Profile update failed' });
+  }
+};
+
+module.exports = { registerUser, loginUser, getProfile, updateProfile };
