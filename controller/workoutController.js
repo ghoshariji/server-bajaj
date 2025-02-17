@@ -1,39 +1,93 @@
-
 const Workout = require("../modals/workoutModal");
-const User=require("../modals/userModal");
+const User = require("../modals/userModal");
+const jwt = require("jsonwebtoken");
 
 // Create a new workout
 const createWorkout = async (req, res) => {
-  const { name, time, result } = req.body;
-
-  if (!name || !time || !result) {
-    return res.status(400).json({ message: 'Please provide all the required fields' });
-  }
-
   try {
-    const workout = new Workout({
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+
+    const { workoutName, count } = req.body;
+    const [name, timeString] = workoutName.split(" - ");
+    const time = parseInt(timeString, 10); 
+
+    if (!name || isNaN(time)) {
+      return res.status(400).json({ message: "Invalid workout format" });
+    }
+
+    // Create and save the workout in the database
+    const newWorkout = new Workout({
       name,
       time,
-      result,
-      user: req.user._id, 
+      result: count, 
+      user: decoded.id,
     });
 
-    await workout.save();
-    res.status(201).json(workout);
+    await newWorkout.save();
+    res.status(201).json({ message: "Workout saved successfully", workout: newWorkout });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error saving workout:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-
+// Get all workouts of a user and the top 5 users
 const getWorkoutsByUser = async (req, res) => {
   try {
-    const workouts = await Workout.find({ user: req.user._id });
-    res.status(200).json(workouts);
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+
+    // Fetch workouts for the logged-in user
+    const userWorkouts = await Workout.find({ user: decoded.id });
+
+    // Extract unique user IDs from workouts
+    const userIds = [...new Set(userWorkouts.map(workout => workout.user.toString()))];
+
+    // Fetch user details excluding passwords
+    const userDetails = await User.find({ _id: { $in: userIds } }).select("-password");
+
+    // Get top 5 users based on workout count
+    const topUsers = await User.aggregate([
+      {
+        $lookup: {
+          from: "workouts",
+          localField: "_id",
+          foreignField: "user",
+          as: "workoutData"
+        }
+      },
+      { $addFields: { score: { $size: "$workoutData" } } },
+      { $sort: { workoutCount: -1 } },
+      { $limit: 5 },
+      { $project: { password: 0, workoutData: 0 } } // Exclude sensitive data
+    ]);
+
+    res.status(200).json({ userIds, userDetails, topUsers });
+
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching workouts:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 // Get all workouts (admin or general view)
 const getAllWorkouts = async (req, res) => {
@@ -41,7 +95,7 @@ const getAllWorkouts = async (req, res) => {
     const workouts = await Workout.find();
     res.status(200).json(workouts);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
