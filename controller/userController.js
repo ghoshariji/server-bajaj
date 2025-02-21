@@ -156,6 +156,7 @@ const getProfile = async (req, res) => {
     }
   };
   
+
 const getUserRedeemBalance = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
