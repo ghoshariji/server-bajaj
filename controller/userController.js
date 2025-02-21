@@ -12,7 +12,7 @@ const generateToken = (id) => {
 
 // Register User
 const registerUser = async (req, res) => {
-  const { email, password,name } = req.body;
+  const { email, password,name,phone } = req.body;
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -21,6 +21,7 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       name,
       email,
+      phone,
       password: hashedPassword,
     });
 

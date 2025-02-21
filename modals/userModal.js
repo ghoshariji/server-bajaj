@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please add a password"],
     },
+    phone:{
+      type:String,
+      required:true,
+      default:""
+    },
     profilePicture: {
         data: {
           type: Buffer,
