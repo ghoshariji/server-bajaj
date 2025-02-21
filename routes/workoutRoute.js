@@ -4,6 +4,8 @@ const {
   createWorkout,
   getWorkoutsByUser,
   getAllWorkouts,
+  getTopWorkouts,
+  workoutData
 } = require('../controller/workoutController');
 const  protect = require('../middleware/authMiddleware');
 
@@ -15,5 +17,9 @@ router.route('/')
 
 router.route('/user')
   .get(protect, getWorkoutsByUser);
+
+  router.get("/top-workouts", getTopWorkouts);
+  router.get("/top-workouts-graph", workoutData);
+
 
 module.exports = router;
