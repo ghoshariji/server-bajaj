@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoute');
 const workoutRoutes = require('./routes/workoutRoute');
 const scheduleRoutes=require("./routes/scheduleRoute");
+const airoute = require('./routes/airoute');
 const cors = require('cors');
 const bodyParser = require("body-parser")
 
