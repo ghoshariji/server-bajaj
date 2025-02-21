@@ -13,7 +13,7 @@ router.route('/')
   .post(protect, createWorkout)
   .get(protect, getAllWorkouts);
 
-router.route('/user')
-  .get(protect, getWorkoutsByUser);
+  router.route('/user').get(protect, getWorkoutsByUser);
+
 
 module.exports = router;
