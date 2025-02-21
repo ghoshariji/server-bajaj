@@ -57,13 +57,8 @@ const getWorkoutsByUser = async (req, res) => {
     // Fetch workouts for the logged-in user
     const userWorkouts = await Workout.find({ user: decoded.id });
 
-    // Extract unique user IDs from workouts
     const userIds = [...new Set(userWorkouts.map(workout => workout.user.toString()))];
-
-    // Fetch user details excluding passwords
     const userDetails = await User.find({ _id: { $in: userIds } }).select("-password");
-
-    // Get top 5 users based on workout count
     const topUsers = await User.aggregate([
       {
         $lookup: {
@@ -93,6 +88,7 @@ const getWorkoutsByUser = async (req, res) => {
 const getAllWorkouts = async (req, res) => {
   try {
     const workouts = await Workout.find();
+    console.log(workouts);
     res.status(200).json(workouts);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
