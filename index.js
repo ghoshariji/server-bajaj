@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoute');
 const workoutRoutes = require('./routes/workoutRoute');
+const scheduleRoutes=require("./routes/scheduleRoute");
 const cors = require('cors');
 const bodyParser = require("body-parser")
 
@@ -17,7 +18,10 @@ app.use(cors());
 
 
 app.use('/api/users', userRoutes);
+
 app.use('/api/workouts', workoutRoutes);
+
+app.use('/api', scheduleRoutes);
 
 app.get("/",(req,res)=>{
     return res.send("hello")

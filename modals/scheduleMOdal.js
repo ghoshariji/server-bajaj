@@ -4,16 +4,16 @@ const scheduleSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Reference to User model
+      ref: "User",
       required: true,
     },
     time: {
-      type: String, // Store time in "HH:mm" format
+      type: String, 
       required: true,
     },
     repeat: {
       type: String,
-      enum: ["daily"], // Ensures it repeats every day
+      enum: ["daily"], 
       default: "daily",
     },
   },
