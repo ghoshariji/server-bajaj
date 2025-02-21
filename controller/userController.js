@@ -14,6 +14,7 @@ const generateToken = (id) => {
 const registerUser = async (req, res) => {
   const { email, password,name,phone } = req.body;
 
+  console.log(req.body);
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -33,6 +34,7 @@ const registerUser = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: 'Registration failed' });
   }
 };
