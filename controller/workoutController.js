@@ -15,6 +15,20 @@ const geminiModel = googleAI.getGenerativeModel({
     maxOutputTokens: 4096,
   },
 });
+const nodemailer = require("nodemailer");
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "arijitghosh1203@gmail.com", // Your email
+    pass: "fvwl cbpf pbeu eunq", // Your email password
+  },
+});
+
 // Create a new workout
 const createWorkout = async (req, res) => {
   try {
@@ -37,30 +51,56 @@ const createWorkout = async (req, res) => {
       return res.status(400).json({ message: "Invalid workout format" });
     }
 
-    // Create and save the workout in the database
-    const newWorkout = new Workout({
-      name,
-      time,
-      result: count, // Store count in result
-      user: decoded.id,
-    });
-
-    await newWorkout.save();
-
-    // Update the redeem field in the user model (e.g., increment redeem points)
+    // Fetch user data
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.redeem = (parseInt(user.redeem, 10) || 0) + count; // Add count to redeem field
+    // Create and save the workout
+    const newWorkout = new Workout({
+      name,
+      time,
+      result: count,
+      user: decoded.id,
+    });
+
+    await newWorkout.save();
+
+    // Update redeem points
+    user.redeem = (parseInt(user.redeem, 10) || 0) + count;
     await user.save();
+
+    // **Send Email to User**
+    const mailOptions = {
+      from:"arijitghosh1203@gmail.com",
+      to: user.email, // Ensure the user model has an email field
+      subject: "Workout Recorded Successfully! 🏋️",
+      html: `
+        <h2>Hello ${user.name},</h2>
+        <p>Your workout <strong>${name}</strong> has been successfully recorded! 💪</p>
+        <p><strong>Time:</strong> ${time} minutes</p>
+        <p><strong>Reps Completed:</strong> ${count}</p>
+        <p><strong>Total Redeem Points:</strong> ${user.redeem} 🎉</p>
+        <br>
+        <p>Keep up the great work! 🚀</p>
+      `,
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error("Error sending email:", err);
+      } else {
+        console.log("Email sent:", info.response);
+      }
+    });
 
     res.status(201).json({
       message: "Workout saved successfully",
       workout: newWorkout,
       updatedUser: user,
     });
+
   } catch (error) {
     console.error("Error saving workout:", error);
     res.status(500).json({ message: "Server error" });
