@@ -12,14 +12,20 @@ exports.saveUserChat = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id; // Extract user ID from the token
 
+    console.log(req.body)
     const { text, aiResponse } = req.body;
 
     if (!text || !aiResponse) {
       return res.status(400).json({ message: "Text and AI response are required." });
     }
 
-    // Remove previous chat entry (if any)
-    await UserModal.deleteOne({ userId });
+    // Check if user already has a chat entry
+    const existingChat = await UserModal.findOne({ userId });
+
+    if (existingChat) {
+      // Delete the previous chat
+      await UserModal.deleteOne({ userId });
+    }
 
     // Save new chat
     const newChat = new UserModal({ userId, text, aiResponse });
@@ -30,6 +36,7 @@ exports.saveUserChat = async (req, res) => {
     res.status(500).json({ message: "Error saving chat", error: error.message });
   }
 };
+
 
 // Get User Chats
 exports.getUserChats = async (req, res) => {

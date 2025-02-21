@@ -23,6 +23,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/workouts', workoutRoutes);
 
 app.use('/api', scheduleRoutes);
+app.use('/api/chat', airoute);
 
 app.get("/",(req,res)=>{
     return res.send("hello")
