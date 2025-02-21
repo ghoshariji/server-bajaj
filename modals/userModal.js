@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema(
     },
     phone:{
       type:String,
-      required:true,
+      default:""
+    },
+    redeem:{
+      type:Number,
       default:""
     },
     profilePicture: {

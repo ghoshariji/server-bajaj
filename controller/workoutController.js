@@ -41,20 +41,32 @@ const createWorkout = async (req, res) => {
     const newWorkout = new Workout({
       name,
       time,
-      result: count,
+      result: count, // Store count in result
       user: decoded.id,
     });
 
     await newWorkout.save();
-    res
-      .status(201)
-      .json({ message: "Workout saved successfully", workout: newWorkout });
+
+    // Update the redeem field in the user model (e.g., increment redeem points)
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.redeem = (parseInt(user.redeem, 10) || 0) + count; // Add count to redeem field
+    await user.save();
+
+    res.status(201).json({
+      message: "Workout saved successfully",
+      workout: newWorkout,
+      updatedUser: user,
+    });
   } catch (error) {
     console.error("Error saving workout:", error);
     res.status(500).json({ message: "Server error" });
   }
-
 };
+
 
 
 
