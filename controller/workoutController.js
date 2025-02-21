@@ -39,8 +39,6 @@ const createWorkout = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// Get all workouts of a user and the top 5 users
 const getWorkoutsByUser = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -54,33 +52,68 @@ const getWorkoutsByUser = async (req, res) => {
       return res.status(403).json({ message: "Invalid token" });
     }
 
-    // Fetch workouts for the logged-in user
-    const userWorkouts = await Workout.find({ user: decoded.id });
+    const userId = decoded.id;
 
-    const userIds = [...new Set(userWorkouts.map(workout => workout.user.toString()))];
-    const userDetails = await User.find({ _id: { $in: userIds } }).select("-password");
-    const topUsers = await User.aggregate([
+    // Fetch workouts of the logged-in user
+    const userWorkouts = await Workout.find({ user: userId })
+      .populate("user", "name email") // Populate user name and email
+      .sort({ createdAt: -1 }); // Sort workouts by latest
+
+    // Get all unique users who have done workouts
+    const allUsersWorkouts = await Workout.aggregate([
+      {
+        $group: {
+          _id: "$user",
+          totalScore: { $sum: 1 }, // Count total workouts as score
+          workoutNames: { $push: "$name" }, // Collect workout names
+        },
+      },
       {
         $lookup: {
-          from: "workouts",
+          from: "users",
           localField: "_id",
-          foreignField: "user",
-          as: "workoutData"
-        }
+          foreignField: "_id",
+          as: "userDetails",
+        },
       },
-      { $addFields: { score: { $size: "$workoutData" } } },
-      { $sort: { workoutCount: -1 } },
-      { $limit: 5 },
-      { $project: { password: 0, workoutData: 0 } } // Exclude sensitive data
+      {
+        $unwind: "$userDetails",
+      },
+      {
+        $project: {
+          _id: 1,
+          totalScore: 1,
+          workoutNames: 1,
+          "userDetails.name": 1,
+          "userDetails.email": 1,
+        },
+      },
     ]);
 
-    res.status(200).json({ userIds, userDetails, topUsers });
+    // Get the top 5 users based on the most workouts
+    const topUsers = allUsersWorkouts
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, 5);
+
+    res.status(200).json({
+      userWorkouts: userWorkouts.map(workout => ({
+        workoutName: workout.name,
+        user: workout.user.name,
+        result: workout.result,
+      })),
+      allUsersWorkouts,
+      topUsers,
+    });
 
   } catch (error) {
     console.error("Error fetching workouts:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+
 
 
 

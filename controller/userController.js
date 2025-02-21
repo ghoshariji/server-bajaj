@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../modals/userModal');
+const aiPersonalData = require('../modals/aiPersonalData');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -132,8 +133,27 @@ const getProfile = async (req, res) => {
     }
   };
   
+
+  const getUserDetails = async (req, res) => {
+    try {
+      // Find the user by ID and exclude password and profile picture
+      const user = await User.findById(req.user.id).select("-password -profilePicture");
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      // Fetch AI response data from UserModal using userId
+      const aiResponses = await aiPersonalData.find({ userId: req.user.id });
+  
+      res.status(200).json({ user, aiResponses });
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
   
 
 
 
-module.exports = { registerUser, loginUser, getProfile, updateProfile };
+module.exports = { registerUser, loginUser, getProfile, updateProfile,getUserDetails };
